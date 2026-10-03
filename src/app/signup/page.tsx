@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -8,83 +8,60 @@ import {
   Eye,
   EyeOff,
   LoaderCircle,
-  LockKeyhole,
   WalletCards,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ExpenseDashboard } from "@/components/expense-dashboard";
 
-type AuthResponse = {
-  authenticated?: boolean;
+type SignupResponse = {
+  created?: boolean;
   detail?: string;
 };
 
-export default function Home() {
+export default function SignupPage() {
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCreated, setIsCreated] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    fetch("/api/auth/token", { signal: controller.signal })
-      .then((response) => response.json())
-      .then((result: AuthResponse) => {
-        setIsAuthenticated(Boolean(result.authenticated));
-      })
-      .catch(() => undefined)
-      .finally(() => {
-        if (!controller.signal.aborted) {
-          setIsCheckingSession(false);
-        }
-      });
-
-    return () => controller.abort();
-  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/auth/token", {
+      const response = await fetch("/api/auth/signup", {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ username, password }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, password }),
       });
-      const result = (await response.json()) as AuthResponse;
+      const result = (await response.json()) as SignupResponse;
 
       if (!response.ok) {
-        throw new Error(result.detail ?? "Sign in failed. Check your details and try again.");
+        throw new Error(result.detail ?? "Unable to create your account. Please try again.");
       }
 
-      setIsAuthenticated(true);
+      setIsCreated(true);
     } catch (submitError) {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Unable to sign in right now. Please try again.",
+          : "Unable to create your account right now. Please try again.",
       );
     } finally {
       setIsSubmitting(false);
     }
-  }
-
-  async function handleSignOut() {
-    await fetch("/api/auth/token", { method: "DELETE" });
-    setIsAuthenticated(false);
-    setPassword("");
-  }
-
-  if (isAuthenticated && !isCheckingSession) {
-    return <ExpenseDashboard onSignOut={handleSignOut} />;
   }
 
   return (
@@ -102,15 +79,15 @@ export default function Home() {
 
         <div className="relative z-10 flex flex-1 flex-col justify-center pt-7 lg:pt-0">
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#e9a286]">
-            Personal finance
+            A clearer picture
           </p>
           <h1 className="max-w-lg font-serif text-5xl leading-[1.04] sm:text-6xl">
-            Know where
+            Start with
             <br />
-            it goes.
+            one small step.
           </h1>
           <p className="mt-5 max-w-sm text-sm leading-6 text-[#d0dbd4]">
-            A little clarity can change the whole picture.
+            Create your account and bring your spending into focus.
           </p>
 
           <div
@@ -134,47 +111,41 @@ export default function Home() {
 
       <section className="flex min-h-[calc(100svh-210px)] items-center justify-center px-6 py-12 sm:px-10 lg:min-h-svh lg:px-14">
         <div className="login-form-enter w-full max-w-[390px]">
-          <div className="mb-9">
+          <div className="mb-8">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[#a9654c]">
-              Account access
+              Create account
             </p>
             <h2 className="font-serif text-[38px] leading-tight text-[#1c3028]">
-              {isAuthenticated ? "You’re signed in." : "Welcome back."}
+              {isCreated ? "You’re all set." : "A fresh start."}
             </h2>
             <p className="mt-2 text-sm leading-6 text-[#6b756f]">
-              {isAuthenticated
-                ? "Your session is active in this browser."
-                : "Enter your username and password to continue."}
+              {isCreated
+                ? "Your account has been created. Sign in to continue."
+                : "Add your details to get started."}
             </p>
           </div>
 
-          {isCheckingSession ? (
-            <div className="flex h-32 items-center justify-center" role="status">
-              <LoaderCircle className="animate-spin text-[#39735c]" size={24} />
-              <span className="sr-only">Checking your session</span>
-            </div>
-          ) : isAuthenticated ? (
+          {isCreated ? (
             <div className="space-y-5">
               <div className="flex items-center gap-3 border-y border-[#d9ded8] py-5">
                 <span className="flex size-10 items-center justify-center rounded-full bg-[#dce9df] text-[#39735c]">
                   <Check aria-hidden="true" size={20} />
                 </span>
                 <div>
-                  <p className="text-sm font-medium text-[#1c3028]">Authentication complete</p>
-                  <p className="mt-1 text-xs text-[#6b756f]">You can safely close this page.</p>
+                  <p className="text-sm font-medium text-[#1c3028]">Account created</p>
+                  <p className="mt-1 text-xs text-[#6b756f]">You can now sign in with your new details.</p>
                 </div>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-11 w-full border-[#cbd3cc] bg-transparent text-[#294238] hover:bg-[#e9ece7]"
-                onClick={handleSignOut}
+              <Link
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#c76d4f] text-sm font-semibold text-white transition-colors hover:bg-[#ad583d]"
+                href="/"
               >
-                Sign out
-              </Button>
+                Go to sign in
+                <ArrowRight aria-hidden="true" size={16} />
+              </Link>
             </div>
           ) : (
-            <form className="space-y-5" onSubmit={handleSubmit}>
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="space-y-2">
                 <label htmlFor="username" className="text-sm font-medium text-[#283a31]">
                   Username
@@ -187,7 +158,24 @@ export default function Home() {
                   required
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
-                  placeholder="Your username"
+                  placeholder="Choose a username"
+                  className="h-12 rounded-lg border-[#d4dbd4] bg-white px-3 text-sm text-[#1c3028] placeholder:text-[#9ba49d] focus-visible:border-[#39735c] focus-visible:ring-[#39735c]/20"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-sm font-medium text-[#283a31]">
+                  Email
+                </label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="you@example.com"
                   className="h-12 rounded-lg border-[#d4dbd4] bg-white px-3 text-sm text-[#1c3028] placeholder:text-[#9ba49d] focus-visible:border-[#39735c] focus-visible:ring-[#39735c]/20"
                 />
               </div>
@@ -201,11 +189,11 @@ export default function Home() {
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
+                    autoComplete="new-password"
                     required
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    placeholder="Your password"
+                    placeholder="Create a password"
                     className="h-12 rounded-lg border-[#d4dbd4] bg-white px-3 pr-12 text-sm text-[#1c3028] placeholder:text-[#9ba49d] focus-visible:border-[#39735c] focus-visible:ring-[#39735c]/20"
                   />
                   <button
@@ -218,6 +206,23 @@ export default function Home() {
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="confirm-password" className="text-sm font-medium text-[#283a31]">
+                  Confirm password
+                </label>
+                <Input
+                  id="confirm-password"
+                  name="confirm-password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder="Enter your password again"
+                  className="h-12 rounded-lg border-[#d4dbd4] bg-white px-3 text-sm text-[#1c3028] placeholder:text-[#9ba49d] focus-visible:border-[#39735c] focus-visible:ring-[#39735c]/20"
+                />
               </div>
 
               {error && (
@@ -237,23 +242,19 @@ export default function Home() {
                 {isSubmitting ? (
                   <>
                     <LoaderCircle className="animate-spin" />
-                    Signing in
+                    Creating account
                   </>
                 ) : (
                   <>
-                    Sign in
+                    Create account
                     <ArrowRight data-icon="inline-end" />
                   </>
                 )}
               </Button>
-              <p className="flex items-center justify-center gap-2 pt-2 text-xs text-[#7c867f]">
-                <LockKeyhole aria-hidden="true" size={14} />
-                Your credentials are sent securely to your account service.
-              </p>
               <p className="text-center text-sm text-[#6b756f]">
-                New here?{" "}
-                <Link className="font-semibold text-[#39735c] underline-offset-4 hover:underline" href="/signup">
-                  Create an account
+                Already have an account?{" "}
+                <Link className="font-semibold text-[#39735c] underline-offset-4 hover:underline" href="/">
+                  Sign in
                 </Link>
               </p>
             </form>
