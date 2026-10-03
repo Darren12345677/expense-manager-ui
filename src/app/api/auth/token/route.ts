@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 
 const accessTokenCookie = "expense_access_token";
 const sessionMaxAge = 30 * 60;
-const apiUrl = (process.env.EXPENSE_API_URL ?? "http://127.0.0.1:8000").replace(/\/$/, "");
+const apiUrl = (process.env.EXPENSE_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
 
 type TokenResponse = {
   access_token?: string;
