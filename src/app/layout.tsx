@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sign in | Expense Manager",
-  description: "Sign in to your Expense Manager account.",
+  title: "Expense Manager",
+  description: "Track your expenses and manage your personal finances.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
